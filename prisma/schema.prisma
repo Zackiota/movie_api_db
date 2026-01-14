@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+} 
+
+datasource db {
+  provider = "mysql"
+}
+
+model NguoiDung {
+  maTaiKhoan    Int      @id @default(autoincrement())
+  hoTen         String   @db.VarChar(200)
+  email         String   @unique @db.VarChar(100)
+  soDt          String   @db.VarChar(50)
+  matKhau       String   @db.VarChar(255)
+  loaiNguoiDung String   @db.VarChar(100)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("nguoi_dung")
+}
+
+model LichChieu {
+  maLichChieu  Int      @id @default(autoincrement())
+  maRapId      Int
+  maPhimId     Int
+  ngayGioChieu DateTime @db.DateTime(0)
+  giaVe        Float    @db.Float
+  title        String   @db.VarChar(200)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  maPhim       Phim     @relation(fields: [maPhimId], references: [maPhim])
+  maRap        RapPhim  @relation(fields: [maRapId], references: [maRap])
+
+  @@index([maPhimId], map: "lich_chieu_maPhimId_fkey")
+  @@index([maRapId], map: "lich_chieu_maRapId_fkey")
+  @@map("lich_chieu")
+}
+
+model Phim {
+  maPhim        Int         @id @default(autoincrement())
+  tenPhim       String      @db.VarChar(200)
+  trailer       String      @db.VarChar(255)
+  hinhAnh       String      @db.VarChar(255)
+  ngayKhoiChieu DateTime    @db.DateTime(0)
+  danhGia       Int
+  hot           Boolean     @default(false)
+  dangChieu     Boolean     @default(false)
+  sapChieu      Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  banners       Banner[]
+  lichChieus    LichChieu[]
+
+  @@map("phim")
+}
+
+model RapPhim {
+  maRap      Int         @id @default(autoincrement())
+  tenRap     String      @db.VarChar(200)
+  maCumRap   Int
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  ghe        Ghe[]
+  lichChieus LichChieu[]
+
+  @@map("rap_phim")
+}
+
+model DatVe {
+  taiKhoan    Int      @id @default(autoincrement())
+  maLichChieu Int
+  maGheId     Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  maGhe       Ghe      @relation(fields: [maGheId], references: [maGhe])
+
+  @@index([maGheId], map: "dat_ve_maGheId_fkey")
+  @@map("dat_ve")
+}
+
+model Ghe {
+  maGhe     Int      @id @default(autoincrement())
+  tenGhe    String   @db.VarChar(100)
+  loaiGhe   String   @db.VarChar(100)
+  maRapId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  datVes    DatVe[]
+  maRap     RapPhim  @relation(fields: [maRapId], references: [maRap])
+
+  @@index([maRapId], map: "ghe_maRapId_fkey")
+  @@map("ghe")
+}
+
+model CumRap {
+  maCumRap     Int      @id @default(autoincrement())
+  tenCumRap    String   @db.VarChar(200)
+  diaChi       String   @db.VarChar(255)
+  maHeThongRap String   @db.VarChar(100)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("cum_rap")
+}
+
+model HeThongRap {
+  maHeThongRap  Int      @id @default(autoincrement())
+  tenHeThongRap String   @db.VarChar(200)
+  logo          String   @db.VarChar(255)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("he_thong_rap")
+}
+
+model Banner {
+  maBanner  Int      @id @default(autoincrement())
+  maPhimId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  maPhim    Phim     @relation(fields: [maPhimId], references: [maPhim])
+
+  @@index([maPhimId], map: "banner_maPhimId_fkey")
+  @@map("banner")
+}
