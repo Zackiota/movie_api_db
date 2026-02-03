@@ -1,40 +1,63 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/client/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
-
+import { DATABASE_HOST, DATABASE_NAME, DATABASE_PASSWORD, DATABASE_PORT, DATABASE_USER } from 'src/common/constant/app.constant'; 
+//import { log } from 'util';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
 
-  constructor() {
-    console.log('Connecting with:', {
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      database: process.env.DB_NAME,
-    });
+constructor () {
+  console.log({DATABASE_HOST})
+  const adapter = new PrismaMariaDb({
+  host: DATABASE_HOST,
+  port: Number (DATABASE_PORT),
+  user: DATABASE_USER,
+  password: DATABASE_PASSWORD,
+  database: DATABASE_NAME,
+  connectionLimit: 5, 
+  allowPublicKeyRetrieval: true,
+  //  logger: {
+  //       network: (info) => {
+  //       console.log('PrismaAdapterNetwork', info);
+          
+  //       },
+  //       query: (info) => {
+  //       console.log('PrismaAdapterQuery', info);
+  //       },
+  //       error: (error) => {
+  //       console.error('PrismaAdapterError', error);
+  //       },
+  //       warning: (info) => {
+  //       console.warn('PrismaAdapterWarning', info);
+  //       },
+  //     },
+})
 
-    const adapter = new PrismaMariaDb({
-      host: process.env.DB_HOST || 'localhost',
-      port: Number(process.env.DB_PORT) || 3306,
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'movie_api_db',
-      allowPublicKeyRetrieval: true,
-      ssl: { rejectUnauthorized: false },
-      connectionLimit: 5, 
-    });
-
-    super({ adapter });
-  }
-
-   
+console.log({adapter});
+super ({adapter},
+  
+)
+}
+ 
   async onModuleInit() {
-    await this.$connect();
-    console.log('✅ Prisma connected successfully!');
-  }
+        try {
+            await this.$connect();
+            await this.$queryRawUnsafe<any>(`SELECT 1 + 1 AS result`);
+            console.log("✅ Database connected");
+        } catch (error) {
+            console.error("❌ Database connection failed:", error);
+        }
+    }
 
   async onModuleDestroy() {
     await this.$disconnect();
   }
 }
+
+
+
 

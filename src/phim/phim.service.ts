@@ -1,45 +1,54 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma, Phim } from '@prisma/client';
+import { Prisma, Phim } from '../generated/client/client';
+import { CreatePhimDto } from './dto/create-phim.dto';
+import { UpdatePhimDto } from './dto/update-phim.dto';
+import { buildQuery } from '../common/helper/build-query';
+import { QueryDto } from '../common/dto/query.dto';
+
 
 @Injectable()
 export class PhimService {
-    constructor (private prisma: PrismaService) {
-        console.log('🔍 DATABASE_URL in PhimService:', process.env.DATABASE_URL || undefined);
-    }
-        async create(data: Prisma.PhimCreateInput): Promise<Phim> {
-            return this.prisma.phim.create({ data: data });
+    constructor(private readonly prisma: PrismaService) {}
+        create(createPhimDto: CreatePhimDto) {
+            return "Bạn vừa tạo thêm 1 phim mới";
         }
-        async findAll(): Promise<Phim[]> {
-            return this.prisma.phim.findMany({
-                include: {
-                    banners: true, 
-                    lichChieus: { 
-                        include: { 
-                            maRap: true
-                        },
-                    }
-            }});
-        }
-        async findOne(maPhim: number): Promise<Phim | null> {
-            return this.prisma.phim.findUnique({ 
-                where: { maPhim: maPhim }, 
-                include: {
-                    banners: true, 
-                    lichChieus: { 
-                        include: { maRap: true }
-                    },
-                }
+
+        async findAll(queryDto: QueryDto) {
+            const { page, pageSize, filters, index } = buildQuery(queryDto);
+
+            const phimPromise = this.prisma.phim.findMany({
+                where: filters,
+                skip: index,
+                take: pageSize,
             });
+
+            const totalItemPromise = this.prisma.phim.count({ where: filters });
+
+            const [phim, totalItem] = await Promise.all([
+                phimPromise,
+                totalItemPromise,
+            ]);
+
+            const totalPage = Math.ceil(totalItem / pageSize);
+
+            return {
+                items: phim || [],
+                page,
+                pageSize,
+                totalItem,
+                totalPage,
+            };
+            } 
+
+        async findOne(maPhim: number) {
+            return `Bạn vừa tìm được #${maPhim} phim`;
         }
-        async update (maPhim: number, data: Prisma.PhimUpdateInput): Promise<Phim> {
-            return this.prisma.phim.update({ 
-                where: { maPhim: maPhim }, 
-                data: data 
-            });
+        async update (maPhim: number, updatePhimDto: UpdatePhimDto) {
+            return `Bạn vừa cập nhật #${maPhim} phim`;
         }
         async remove(maPhim: number) {
-            return this.prisma.phim.delete({ where: { maPhim: maPhim } });
+            return `Bạn vừa xoá #${maPhim} phim`;
         }
 }
 

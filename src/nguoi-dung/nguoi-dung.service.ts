@@ -1,81 +1,113 @@
 import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { LoginUserDto } from './dto/login-user.dto';
-import { RegisterUserDto } from './dto/register-user.dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { GetInfoDto } from './dto/get-info.dto';
 import * as bcrypt from 'bcrypt';
-import { NguoiDung} from '@prisma/client';
+import { TokenService } from 'src/module-system/token/token.service';
+import { UpdateNguoiDungDto } from './dto/update-nguoi-dung.dto';
+
 
 @Injectable()
 export class NguoiDungService {
 
-    constructor(private readonly prisma: PrismaService, private jwtService: JwtService) {}
+    constructor(
+        private readonly prisma: PrismaService, 
+        private readonly tokenService: TokenService) {}
 
-        async register(dto: RegisterUserDto): Promise<{ accessToken: string }> {
-            const existingUser = await this.prisma.nguoiDung.findUnique(
-                { where: { email: dto.email } }
+        async register(registerDto:RegisterDto) {
+            const { email, matKhau, hoTen, soDt, loaiNguoiDung } = registerDto;
+                console.log({ email, matKhau, hoTen, soDt, loaiNguoiDung }); 
+
+                console.log(1)
+            const userExists = await this.prisma.nguoiDung.findUnique(
+                { where: 
+                    { email: registerDto.email } 
+                }
             );
-            if (existingUser) {
-            throw new BadRequestException('Người dùng đã có tài khoản');
+
+            if (userExists) {
+                throw new BadRequestException('Người dùng đã có tài khoản, vui lòng đăng nhập');
             }
 
-            const hashedPassword = await bcrypt.hash(dto.matKhau, 10); // Salt rounds = 10
+            const hashedPassword =  bcrypt.hashSync(registerDto.matKhau, 10); // Salt rounds = 10
 
-            const nguoiDung  = await this.prisma.nguoiDung.create({
+            const userNew  = await this.prisma.nguoiDung.create({
                 data: {
-                    hoTen: dto.hoTen,
-                    email: dto.email,
-                    soDt: dto.soDt,
+                    hoTen: registerDto.hoTen,
+                    email: registerDto.email,
                     matKhau: hashedPassword,
-                    loaiNguoiDung: dto.loaiNguoiDung,
+                    loaiNguoiDung: registerDto.loaiNguoiDung,
+                    soDt: registerDto.soDt
                 },
-            },
-            );
+            },);
 
-            const token = this.generateToken(nguoiDung);
-            return { accessToken: token };
+            return userNew;
+   
         }
 
-        async login(dto: LoginUserDto): Promise<{ accessToken: string }> {
-            const user = await this.prisma.nguoiDung.findUnique({ where: { email: dto.email } });
-            if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
+        async login(loginDto: LoginDto){
+            const { email, matKhau } = loginDto;
+            console.log({ email, matKhau }); 
+
+            const userExists = await this.prisma.nguoiDung.findUnique({
+                where: { email: loginDto.email } });
+            if (!userExists) {
+            throw new BadRequestException('Người dùng không tồn tại'); 
             }
 
-            const passwordMatch = await bcrypt.compare(dto.matKhau, user.matKhau);
-            if (!passwordMatch) {
-            throw new UnauthorizedException('Invalid credentials');
+            const isPassword = bcrypt.compareSync(matKhau, userExists.matKhau);
+            if (!isPassword) {
+                throw new BadRequestException('Mật khẩu chưa chính xác, vui long đăng nhập lại');
             }
 
-            const token = this.generateToken(user);
-            return { accessToken: token };
+            const tokens = this.tokenService.createTokens(userExists.maTaiKhoan);
+            return { accessToken: tokens };
         }
 
-            private generateToken(user: NguoiDung): string {
-                const payload = { email: user.email, sub: user.maTaiKhoan, hoTen: user.hoTen };
-                return this.jwtService.sign(payload);
-            }
+        async getInfo(getInfoDto: GetInfoDto) {
+            const userInfo = await this.prisma.nguoiDung.findUnique({
+                    where: {
+                        maTaiKhoan: getInfoDto.maTaiKhoan,
+                    },
+                    select: {
+                        maTaiKhoan: true,
+                        email: true,
+                        hoTen: true,
+                        soDt: true,
+                        loaiNguoiDung: true,
+                        
+                    },
+            });
+            return userInfo;
+        }
 
-        async findMany(): Promise<NguoiDung[]> {
+        async findMany() {
             return this.prisma.nguoiDung.findMany();
         }
 
-        async findOne(maTaiKhoan: number): Promise<NguoiDung | null> {
-            return this.prisma.nguoiDung.findUnique({ where: { maTaiKhoan: maTaiKhoan } });
+        async findOne(maTaiKhoan: number) {
+            return this.prisma.nguoiDung.findUnique({
+                where: {
+                    maTaiKhoan: maTaiKhoan,
+                }
+            });
         }
 
-        async update(maTaiKhoan: number, data: Prisma.NguoiDungUpdateInput): Promise<NguoiDung> {
-            return this.prisma.nguoiDung.update({ where: { maTaiKhoan: maTaiKhoan }, data: data });
+        async update(maTaiKhoan: number, updateNguoiDungDto: UpdateNguoiDungDto) {
+            return this.prisma.nguoiDung.update({ 
+                where: { maTaiKhoan: maTaiKhoan }, 
+                data: updateNguoiDungDto
+            });
         }
 
         async remove(maTaiKhoan: number) {
-            return this.prisma.nguoiDung.delete({ where: { maTaiKhoan: maTaiKhoan } });
+            return this.prisma.nguoiDung.delete({ 
+                where: { 
+                    maTaiKhoan: maTaiKhoan,
+                } });
         }
-
+        
     }
-
-
-
-    
-
 

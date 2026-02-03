@@ -12,9 +12,22 @@ import { GheModule } from './ghe/ghe.module';
 import { CumRapModule } from './cum-rap/cum-rap.module';
 import { HeThongRapModule } from './he-thong-rap/he-thong-rap.module';
 import { BannerModule } from './banner/banner.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({isGlobal: true}), PrismaModule, PhimModule, NguoiDungModule, LichChieuModule, RapPhimModule, DatVeModule, GheModule, CumRapModule, HeThongRapModule, BannerModule],
+  imports: [
+    AuthModule, 
+    ConfigModule.forRoot({isGlobal: true}), 
+    PrismaModule, 
+    PhimModule, 
+    NguoiDungModule, 
+    LichChieuModule, 
+    RapPhimModule, 
+    DatVeModule, 
+    GheModule, 
+    CumRapModule, 
+    HeThongRapModule, 
+    BannerModule],
   controllers: [AppController],
   providers: [AppService],
 })

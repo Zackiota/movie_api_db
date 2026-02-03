@@ -1,6 +1,9 @@
 generator client {
-  provider = "prisma-client-js"
-} 
+  provider     = "prisma-client"
+  output       = "../src/generated/client"
+  moduleFormat = "cjs"
+  engineType = "binary"
+}
 
 datasource db {
   provider = "mysql"
@@ -15,6 +18,7 @@ model NguoiDung {
   loaiNguoiDung String   @db.VarChar(100)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  datVe         DatVe[]
 
   @@map("nguoi_dung")
 }
@@ -67,14 +71,18 @@ model RapPhim {
 }
 
 model DatVe {
-  taiKhoan    Int      @id @default(autoincrement())
+  maDatVe     Int       @id @default(autoincrement())
+  maTaiKhoan  Int
   maLichChieu Int
   maGheId     Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  maGhe       Ghe      @relation(fields: [maGheId], references: [maGhe])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  ghe         Ghe       @relation(fields: [maGheId], references: [maGhe])
+  nguoiDung   NguoiDung @relation(fields: [maTaiKhoan], references: [maTaiKhoan])
 
   @@index([maGheId], map: "dat_ve_maGheId_fkey")
+  @@index([maTaiKhoan])
+  @@index([maLichChieu])
   @@map("dat_ve")
 }
 

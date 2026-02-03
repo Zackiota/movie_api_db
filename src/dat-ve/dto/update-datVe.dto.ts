@@ -1,15 +1,16 @@
 import { IsNotEmpty, IsNumber } from 'class-validator';
-export class CreateBookingDto {
+
+export class UpdateDatVeDto {
+
+    @IsNumber()
+    @IsNotEmpty()
+    maTaiKhoan: number;
 
     @IsNumber()
     @IsNotEmpty()
     maLichChieu: number;
-    
+
     @IsNumber()
     @IsNotEmpty()
-    maGhe: number;
-    
-    @IsNumber()
-    @IsNotEmpty()
-    maPhim: number;
+    maGheId: number;
 }
